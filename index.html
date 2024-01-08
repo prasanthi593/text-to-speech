@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text to Speech</title>
+    <style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "cursive";
+}
+
+body {
+  display: flex;
+  height: 100vh;
+  background: darkturquoise;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  margin: 0 1rem;
+  padding: 0 1.2rem;
+  text-align: center;
+  border-radius: 0.1rem;
+  width: clamp(30rem, 4vw, 5rem);
+  background: rgb(255 255 255 / 80%);
+}
+
+.container .title {
+  font-weight: 600;
+  font-size: 1.0rem;
+  margin-top: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.container .text textarea {
+  width: 100%;
+  padding: 0.4rem;
+  border-radius: 0.6rem;
+  border: 2px solid rgb(0 0 0 / 20%);
+  background: rgb(255 255 255 / 70%);
+}
+
+.container .text textarea:focus {
+  outline: none;
+  border: 2px solid rgb(39 181 197);
+}
+
+.container :is(.rate, .pitch) {
+  position: relative;
+  margin-top: 1rem;
+}
+
+.container :is(.rate, .pitch) span {
+    top: 0;
+    right: 0;
+    width: 1.3rem;
+    height: 1.5rem;
+    position: absolute;
+    border-radius: 0.1rem;
+    background: rgb(255 255 255 / 50%);
+}
+
+.container :is(.rate, .pitch) p {
+    font-size: .8rem;
+    width: fit-content;
+}
+
+.container :is(.rate, .pitch) input[type="range"] {
+  width: 100%;
+  background-color: rgb(39 181 197);
+}
+
+.container :is(.rate, .pitch) input[type="range"] {
+  width: 100%;
+  opacity: 0.7;
+  outline: none;
+  height: 0.2rem;
+  -webkit-appearance: none;
+  -webkit-transition: 0.2s;
+  transition: opacity 0.2s;
+  background: rgb(0 0 0 / 30%);
+}
+
+.container :is(.rate, .pitch) input[type="range"]:hover {
+  opacity: 1;
+}
+
+.container :is(.rate, .pitch) input[type="range"]::-webkit-slider-thumb {
+  width: 1rem;
+  height: 1rem;
+  cursor: grab;
+  appearance: none;
+  border-radius: 50%;
+  -webkit-appearance: none;
+  background: rgb(39 181 197);
+}
+
+.container :is(.rate, .pitch) input[type="range"]::-moz-range-thumb {
+  width: 1rem;
+  height: 1rem;
+  cursor: grab;
+  background: rgb(39 181 197);
+}
+
+.container .convert {
+  width: 100%;
+  cursor: pointer;
+  padding: 0.2rem 0;
+  margin-top: .6rem;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  border-radius: 0.6rem;
+  color: rgb(0 0 0 / 80%);
+  border: 1px solid transparent;
+  background: cyan;
+}
+
+.container button:focus {
+  outline: 2px solid rgb(0 0 0 / 40%);
+}
+
+#voices {
+  border: 0;
+  width: 100%;
+  height: 2.4rem;
+  margin-top: 0.6rem;
+  border-radius: 0.4rem;
+  padding: 0 0 0 0.5rem;
+  background: rgb(255 255 255 / 50%)
+    url("data:image/svg+xml,<svg height='10px' width='10px' viewBox='0 0 16 16' fill='%23000000' xmlns='http://www.w3.org/2000/svg'><path d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/></svg>")
+    no-repeat;
+  background-position: calc(100% - 0.75rem) center !important;
+  -moz-appearance: none !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  padding-right: 2rem !important;
+}
+
+#voices:focus {
+    outline: 2px solid rgb(0 0 0 / 40%);
+}
+
+#voices option {
+    padding: 2rem;
+}
+</style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">Text to Speech Converter</div>
+        <div class="text">
+            <textarea placeholder="Enter Text" id="text" cols="30" rows="5"></textarea>
+        </div>
+        <div class="rate">
+            <span>1</span>
+            <p>Speed</p>
+            <input type="range" min="0" max="3" id="rate" value="1">
+        </div>
+        <div class="pitch">
+            <span>1</span>
+            <p> Adjust voice Pitch</p>
+            <input type="range" min="0" max="10" id="pitch" value="1">
+        </div>
+        <select id="voices">
+        </select>
+       <button class="convert">Convert</button>
+    </div>
+
+    <script>
+  let text = document.querySelector('#text')
+rate = document.querySelector('#rate')
+pitch = document.querySelector('#pitch')
+play = document.querySelector('#play')
+stopSpeech = document.querySelector('#stop')
+convert = document.querySelector('.convert')
+voicesOptions = document.querySelector('#voices')
+
+let voices = []
+
+let synth = speechSynthesis
+
+const getVoices = () => {
+    voices = synth.getVoices()
+
+    voices.forEach(voice => {
+        let option = document.createElement('option')
+        option.innerText = `${voice.name}`
+        option.setAttribute('value', voice.name)
+        option.setAttribute('data-name', voice.name)
+        option.setAttribute('data-lang', voice.lang)
+        voicesOptions.appendChild(option)
+    })
+}
+
+getVoices()
+
+if (synth.onvoiceschanged !== undefined) {
+    synth.onvoiceschanged = getVoices
+}
+
+const convertToSpeach = () => {
+    if (synth.speaking) {
+        return
+    }
+
+    if (text.value !== '') {
+        let speakText = new SpeechSynthesisUtterance(text.value)
+
+        speakText.onend = e => {
+            convert.disabled = false
+        }
+
+        speakText.onerror = e => {
+            console.log('Something Went Wrong....')
+        }
+
+        let selectedVoice = voicesOptions.value
+
+        voices.forEach(voice => {
+            if (voice.name == selectedVoice) {
+                speakText.voice = voice
+            }
+        })
+        speakText.rate = rate.value
+        speakText.pitch = pitch.value
+        convert.disabled = true
+
+        synth.speak(speakText)
+    }
+
+    voicesOptions.addEventListener('change', () => {
+        synth.cancel()
+        convertToSpeach()
+    })
+
+    rate.addEventListener('change', () => {
+        synth.cancel()
+        convertToSpeach()
+        document.querySelector('.rate span').innerText = rate.value
+    })
+
+    pitch.addEventListener('change', () => {
+        synth.cancel()
+        convertToSpeach()
+        document.querySelector('.pitch span').innerText = pitch.value
+    })
+
+}
+
+rate.addEventListener('change', () => {
+    document.querySelector('.rate span').innerText = rate.value
+})
+
+pitch.addEventListener('change', () => {
+    document.querySelector('.pitch span').innerText = pitch.value
+})
+
+
+convert.addEventListener('click', convertToSpeach)
+</script>
+</body>
+</html>
